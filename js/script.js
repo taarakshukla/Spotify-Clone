@@ -38,14 +38,14 @@ async function getSongs(folder) {
     let songUL = document.querySelector(".songList").getElementsByTagName("ul")[0]
     songUL.innerHTML = ""
     for (const song of songs) {
-        songUL.innerHTML = songUL.innerHTML + `<li><img class="invert" width="34" src="img/music.svg" alt="">
+        songUL.innerHTML = songUL.innerHTML + `<li data-track="${song}"><img class="invert" width="34" src="img/music.svg" alt="">
                             <div class="info">
                                 <div> ${song.replaceAll("%20", " ")}</div>
                                 <div>Taarak</div>
                             </div>
                             <div class="playnow">
                                 <span>Play Now</span>
-                                <img class="invert" src="img/play.svg" alt="">
+                                <img class="invert hamPlayButton" src="img/play.svg" alt="">
                             </div> </li>`;
     }
 
@@ -55,6 +55,32 @@ async function getSongs(folder) {
             playMusic(e.querySelector(".info").firstElementChild.innerHTML.trim())
 
         })
+
+        e.querySelector(".hamPlayButton").addEventListener("click", (event) => {
+            event.stopPropagation()
+    
+            const track = e.dataset.track.trim()
+            const isCurrentSong = currentSong.src.includes(track)
+    
+            if (isCurrentSong && !currentSong.paused) {
+
+                // Pause the current song
+                currentSong.pause()
+                e.querySelector(".hamPlayButton").src = "img/play.svg"
+                play.src = "img/play.svg"
+                e.classList.remove("active")
+            } else if (isCurrentSong && currentSong.paused) {
+
+                // Resume playing the current song
+                currentSong.play()
+                e.querySelector(".hamPlayButton").src = "img/pause.svg"
+                play.src = "img/pause.svg"
+                e.classList.add("active")
+            } else {
+                // Play the clicked song if it's not the current song
+                playMusic(track)
+            }
+        });
     })
 
     return songs
@@ -62,6 +88,20 @@ async function getSongs(folder) {
 
 const playMusic = (track, pause = false) => {
     currentSong.src = `/${currFolder}/` + track
+
+    const previousActive = document.querySelector('.songList li.active'); // Find the currently active song
+    if (previousActive) {
+        previousActive.querySelector('.hamPlayButton').src = "img/play.svg"; // Reset its play button to "play"
+        previousActive.classList.remove('active'); // Remove the active class
+    }
+
+    const currentItem = document.querySelector(`.songList li[data-track="${track}"]`); // Find the current song
+    if (currentItem) {
+        const currentPlayButton = currentItem.querySelector('.hamPlayButton'); 
+        currentPlayButton.src = pause ? "img/play.svg" : "img/pause.svg"; // Set its play button appropriately
+        currentItem.classList.add('active'); // Add the active class to mark it
+    }
+
     if (!pause) {
         currentSong.play()
         play.src = "img/pause.svg"
@@ -84,9 +124,7 @@ async function displayAlbums() {
     for (let index = 0; index < array.length; index++) {
         const e = array[index]; 
         if (e.href.includes("/songs")) {
-            console.log(e.href)
             let folder = e.href.split("/").slice(-2)[0]
-            console.log(folder)
             // Get the metadata of the folder
             let a = await fetch(`http://127.0.0.1:3000/songs/${folder}/info.json`)
             let response = await a.json(); 
@@ -118,9 +156,6 @@ async function displayAlbums() {
 }
 
 async function main() {
-    // Get the list of all the songs
-    await getSongs("songs/ncs")
-    playMusic(songs[0], true)
 
     // Display all the albums on the page
     await displayAlbums()
@@ -129,12 +164,23 @@ async function main() {
     // Attach an event listener to play, next and previous
     play.addEventListener("click", () => {
         if (currentSong.paused) {
-            currentSong.play()
-            play.src = "img/pause.svg"
-        }
-        else {
-            currentSong.pause()
-            play.src = "img/play.svg"
+            currentSong.play();
+            play.src = "img/pause.svg"; 
+    
+            // Find the active list item based on the current song's src
+            const activeItem = document.querySelector(`.songList li[data-track="${currentSong.src.split('/').pop()}"]`);
+            if (activeItem) {
+                activeItem.querySelector(".hamPlayButton").src = "img/pause.svg";
+            }
+        } else {
+            currentSong.pause();
+            play.src = "img/play.svg";
+    
+            // Find the active list item based on the current song's src
+            const activeItem = document.querySelector(`.songList li[data-track="${currentSong.src.split('/').pop()}"]`);
+            if (activeItem) {
+                activeItem.querySelector(".hamPlayButton").src = "img/play.svg";
+            }
         }
     })
 

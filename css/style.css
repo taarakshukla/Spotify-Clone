@@ -103,7 +103,7 @@ body {
     gap: 10px;
     flex-wrap: wrap;
     overflow-y: auto;
-    max-height: 60vh; 
+    max-height: 65vh; 
 }
 
 .card {
@@ -319,6 +319,11 @@ body {
     justify-content: space-between;
     margin: 20px 0;
     width: 100%;
+}
+
+.songList li.active {
+    background-color: #494949; 
+    font-weight: bold; 
 }
 
 @media (max-width: 1200px) {
