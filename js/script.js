@@ -19,11 +19,11 @@ function secondsToMinutesSeconds(seconds) {
 
 async function getSongs(folder) {
     currFolder = folder;
-    let a = await fetch(`http://127.0.0.1:3000/${folder}/`)
+    let a = await fetch(`/${folder}/`)
     let response = await a.text();
     let div = document.createElement("div")
     div.innerHTML = response;
-    let as = div.getElementsByTagName("a")
+    let as = div.getElementsByTagName('a')
     songs = []
     for (let index = 0; index < as.length; index++) {
         const element = as[index];
@@ -31,7 +31,7 @@ async function getSongs(folder) {
             songs.push(element.href.split(`/${folder}/`)[1])
         }
     }
- 
+
 
 
     // Show all the songs in the playlist
@@ -58,10 +58,10 @@ async function getSongs(folder) {
 
         e.querySelector(".hamPlayButton").addEventListener("click", (event) => {
             event.stopPropagation()
-    
+
             const track = e.dataset.track.trim()
             const isCurrentSong = currentSong.src.includes(track)
-    
+
             if (isCurrentSong && !currentSong.paused) {
 
                 // Pause the current song
@@ -97,7 +97,7 @@ const playMusic = (track, pause = false) => {
 
     const currentItem = document.querySelector(`.songList li[data-track="${track}"]`); // Find the current song
     if (currentItem) {
-        const currentPlayButton = currentItem.querySelector('.hamPlayButton'); 
+        const currentPlayButton = currentItem.querySelector('.hamPlayButton');
         currentPlayButton.src = pause ? "img/play.svg" : "img/pause.svg"; // Set its play button appropriately
         currentItem.classList.add('active'); // Add the active class to mark it
     }
@@ -114,20 +114,26 @@ const playMusic = (track, pause = false) => {
 
 async function displayAlbums() {
     console.log("displaying albums")
-    let a = await fetch(`http://127.0.0.1:3000/songs/`)
+    let a = await fetch(`/songs/`)
     let response = await a.text();
     let div = document.createElement("div")
     div.innerHTML = response;
-    let anchors = div.getElementsByTagName("a")
+    let anchors = div.getElementsByTagName('a')
     let cardContainer = document.querySelector(".cardContainer")
     let array = Array.from(anchors)
     for (let index = 0; index < array.length; index++) {
-        const e = array[index]; 
-        if (e.href.includes("/songs")) {
-            let folder = e.href.split("/").slice(-2)[0]
+        const e = array[index];
+        if (e.href.includes("/songs") && !e.href.includes("/.DS_Store")) {
+            let folderParts = e.href.split("/songs/");
+            if (folderParts.length > 1) {
+                var folder = folderParts[1];
+            } else {
+                continue
+            }
+            
             // Get the metadata of the folder
-            let a = await fetch(`http://127.0.0.1:3000/songs/${folder}/info.json`)
-            let response = await a.json(); 
+            let a = await fetch(`/songs/${folder}/info.json`)
+            let response = await a.json();
             cardContainer.innerHTML = cardContainer.innerHTML + ` <div data-folder="${folder}" class="card">
             <div class="play">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -145,10 +151,10 @@ async function displayAlbums() {
     }
 
     // Load the playlist whenever card is clicked
-    Array.from(document.getElementsByClassName("card")).forEach(e => { 
+    Array.from(document.getElementsByClassName("card")).forEach(e => {
         e.addEventListener("click", async item => {
             console.log("Fetching  ")
-            songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`)  
+            songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`)
             playMusic(songs[0])
 
         })
@@ -165,8 +171,8 @@ async function main() {
     play.addEventListener("click", () => {
         if (currentSong.paused) {
             currentSong.play();
-            play.src = "img/pause.svg"; 
-    
+            play.src = "img/pause.svg";
+
             // Find the active list item based on the current song's src
             const activeItem = document.querySelector(`.songList li[data-track="${currentSong.src.split('/').pop()}"]`);
             if (activeItem) {
@@ -175,7 +181,7 @@ async function main() {
         } else {
             currentSong.pause();
             play.src = "img/play.svg";
-    
+
             // Find the active list item based on the current song's src
             const activeItem = document.querySelector(`.songList li[data-track="${currentSong.src.split('/').pop()}"]`);
             if (activeItem) {
@@ -232,19 +238,19 @@ async function main() {
     document.querySelector(".range").getElementsByTagName("input")[0].addEventListener("change", (e) => {
         console.log("Setting volume to", e.target.value, "/ 100")
         currentSong.volume = parseInt(e.target.value) / 100
-        if (currentSong.volume >0){
+        if (currentSong.volume > 0) {
             document.querySelector(".volume>img").src = document.querySelector(".volume>img").src.replace("mute.svg", "volume.svg")
         }
     })
 
     // Add event listener to mute the track
-    document.querySelector(".volume>img").addEventListener("click", e=>{ 
-        if(e.target.src.includes("volume.svg")){
+    document.querySelector(".volume>img").addEventListener("click", e => {
+        if (e.target.src.includes("volume.svg")) {
             e.target.src = e.target.src.replace("volume.svg", "mute.svg")
             currentSong.volume = 0;
             document.querySelector(".range").getElementsByTagName("input")[0].value = 0;
         }
-        else{
+        else {
             e.target.src = e.target.src.replace("mute.svg", "volume.svg")
             currentSong.volume = .10;
             document.querySelector(".range").getElementsByTagName("input")[0].value = 10;
